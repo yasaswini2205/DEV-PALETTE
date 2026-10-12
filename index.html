@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DevPalette – Interactive UI Component & Theme Customizer</title>
+  
+  <!-- Bootstrap 5 CSS CDN -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons CDN -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <!-- Google Fonts: Inter -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --font-main: 'Inter', system-ui, -apple-system, sans-serif;
+      --font-code: 'Fira Code', monospace;
+      --transition-smooth: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    body {
+      font-family: var(--font-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background-color: var(--bs-body-bg);
+      color: var(--bs-body-color);
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    /* Code Editor / Preview Box Styling */
+    pre code {
+      font-family: var(--font-code);
+      font-size: 0.875rem;
+      tab-size: 2;
+    }
+
+    .code-block {
+      background-color: #1e1e2e !important;
+      color: #cdd6f4 !important;
+      border-radius: 0.5rem;
+      max-height: 280px;
+      overflow-y: auto;
+    }
+
+    /* Live Canvas / Sandbox Area */
+    .sandbox-stage {
+      min-height: 380px;
+      border-radius: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      transition: background-color 0.3s ease, border-color 0.3s ease;
+      background-image: radial-gradient(rgba(100, 100, 100, 0.15) 1px, transparent 1px);
+      background-size: 20px 20px;
+      padding: 2rem;
+      overflow-x: auto;
+    }
+
+    .sandbox-stage.canvas-light {
+      background-color: #ffffff;
+      border: 2px dashed #dee2e6;
+    }
+
+    .sandbox-stage.canvas-dark {
+      background-color: #181825;
+      border: 2px dashed #45475a;
+    }
+
+    .sandbox-stage.canvas-grid {
+      background-size: 24px 24px;
+    }
+
+    /* Custom Color Input Pill */
+    .color-picker-wrapper {
+      position: relative;
+      width: 100%;
+      height: 38px;
+      border-radius: 0.375rem;
+      overflow: hidden;
+      border: 1px solid var(--bs-border-color);
+    }
+
+    .color-picker-wrapper input[type="color"] {
+      position: absolute;
+      top: -10px;
+      left: -10px;
+      width: calc(100% + 20px);
+      height: calc(100% + 20px);
+      cursor: pointer;
+      border: none;
+    }
+
+    /* Preset Badges */
+    .btn-preset {
+      transition: var(--transition-smooth);
+      font-weight: 500;
+      border-width: 2px;
+    }
+
+    .btn-preset:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    /* Scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.05);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(100, 100, 100, 0.25);
+      border-radius: 3px;
+    }
+
+    /* Sticky Side Panels for Desktop */
+    @media (min-width: 992px) {
+      .sticky-panel {
+        position: sticky;
+        top: 80px;
+        max-height: calc(100vh - 100px);
+        overflow-y: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Main Header Navigation -->
+  <header class="navbar navbar-expand-lg border-bottom sticky-top bg-body shadow-sm">
+    <div class="container-fluid px-lg-4">
+      <a class="navbar-brand d-flex align-items-center gap-2 fw-bold text-primary" href="#">
+        <i class="bi bi-palette2 fs-3"></i>
+        <span class="fs-4 tracking-tight">DevPalette</span>
+        <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill fs-7">v1.0</span>
+      </a>
+
+      <div class="d-flex align-items-center gap-2">
+        <!-- Saved Snippets Trigger -->
+        <button class="btn btn-outline-secondary d-flex align-items-center gap-2 rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#favoritesModal">
+          <i class="bi bi-bookmark-heart-fill text-danger"></i>
+          <span class="d-none d-sm-inline">Saved Snippets</span>
+          <span id="favCountBadge" class="badge bg-danger rounded-pill">0</span>
+        </button>
+
+        <!-- Dark/Light Theme Switcher -->
+        <button id="themeToggleBtn" class="btn btn-outline-secondary rounded-circle" style="width: 40px; height: 40px; padding: 0;" title="Toggle Dark/Light Mode">
+          <i id="themeIcon" class="bi bi-moon-stars-fill"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main App Layout -->
+  <main class="container-fluid px-lg-4 py-4 flex-grow-1">
+    <div class="row g-4">
+      
+      <!-- LEFT PANEL: Controls Accordion & Presets -->
+      <div class="col-lg-4 col-xl-3">
+        <div class="sticky-panel d-flex flex-column gap-3">
+          
+          <!-- Component Selector Card -->
+          <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-body p-3">
+              <label class="form-label fw-bold mb-2 text-uppercase fs-7 text-muted tracking-wider">
+                <i class="bi bi-layers-half me-1"></i> Choose Component
+              </label>
+              <select id="componentSelect" class="form-select form-select-lg fw-semibold">
+                <option value="button" selected>Standard Button</option>
+                <option value="card">Content Card</option>
+                <option value="alert">Alert Banner</option>
+                <option value="navbar">Navigation Bar</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Color Scheme Presets Card -->
+          <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-body p-3">
+              <label class="form-label fw-bold mb-2 text-uppercase fs-7 text-muted tracking-wider">
+                <i class="bi bi-brush me-1"></i> Quick Color Presets
+              </label>
+              <div class="d-flex flex-wrap gap-2" id="presetContainer">
+                <button class="btn btn-sm btn-outline-primary btn-preset" onclick="applyPreset('#0d6efd', '#ffffff', '#0a58ca')">Bootstrap Blue</button>
+                <button class="btn btn-sm btn-outline-dark btn-preset" onclick="applyPreset('#ff007f', '#ffffff', '#7928ca', true)">Cyberpunk</button>
+                <button class="btn btn-sm btn-outline-success btn-preset" onclick="applyPreset('#00b4d8', '#ffffff', '#0077b6', true)">Ocean Breeze</button>
+                <button class="btn btn-sm btn-outline-warning btn-preset" onclick="applyPreset('#f77f00', '#ffffff', '#d62828', true)">Sunset Flame</button>
+                <button class="btn btn-sm btn-outline-secondary btn-preset" onclick="applyPreset('#10b981', '#ffffff', '#059669', false)">Neon Mint</button>
+                <button class="btn btn-sm btn-outline-danger btn-preset" onclick="applyPreset('#1f2937', '#f3f4f6', '#374151', false)">Corporate Slate</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Detailed Property Customizer Accordion -->
+          <div class="accordion shadow-sm rounded-3 overflow-hidden" id="controlsAccordion">
+            
+            <!-- 1. Color Settings -->
+            <div class="accordion-item border-0 border-bottom">
+              <h2 class="accordion-header">
+                <button class="accordion-button fw-bold fs-6" type="button" data-bs-toggle="collapse" data-bs-target="#collapseColors">
+                  <i class="bi bi-palette text-primary me-2"></i> Colors & Background
+                </button>
+              </h2>
+              <div id="collapseColors" class="accordion-collapse collapse show" data-bs-parent="#controlsAccordion">
+                <div class="accordion-body d-flex flex-column gap-3">
+                  <div>
+                    <label class="form-label fs-7 fw-semibold">Primary Background Color</label>
+                    <div class="color-picker-wrapper">
+                      <input type="color" id="bgColorInput" value="#0d6efd">
+                    </div>
+                  </div>
+
+                  <div>
+                    <label class="form-label fs-7 fw-semibold">Text Color</label>
+                    <div class="color-picker-wrapper">
+                      <input type="color" id="textColorInput" value="#ffffff">
+                    </div>
+                  </div>
+
+                  <div class="form-check form-switch mt-1">
+                    <input class="form-check-input" type="checkbox" id="gradientToggle">
+                    <label class="form-check-label fs-7 fw-semibold" for="gradientToggle">Enable Gradient Background</label>
+                  </div>
+
+                  <div id="secondaryColorGroup" class="d-none">
+                    <label class="form-label fs-7 fw-semibold">Secondary Gradient Color</label>
+                    <div class="color-picker-wrapper">
+                      <input type="color" id="bgSecondaryColorInput" value="#6610f2">
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. Typography Settings -->
+            <div class="accordion-item border-0 border-bottom">
+              <h2 class="accordion-header">
+                <button class="accordion-button collapsed fw-bold fs-6" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTypography">
+                  <i class="bi bi-fonts text-success me-2"></i> Typography
+                </button>
+              </h2>
+              <div id="collapseTypography" class="accordion-collapse collapse" data-bs-parent="#controlsAccordion">
+                <div class="accordion-body d-flex flex-column gap-3">
+                  <div>
+                    <div class="d-flex justify-content-between">
+                      <label class="form-label fs-7 fw-semibold">Font Size</label>
+                      <span id="fontSizeVal" class="text-muted fs-7">16px</span>
+                    </div>
+                    <input type="range" class="form-range" id="fontSizeInput" min="12" max="32" value="16">
+                  </div>
+
+                  <div>
+                    <label class="form-label fs-7 fw-semibold">Font Weight</label>
+                    <select id="fontWeightInput" class="form-select form-select-sm">
+                      <option value="400">Normal (400)</option>
+                      <option value="500">Medium (500)</option>
+                      <option value="600" selected>Semi-Bold (600)</option>
+                      <option value="700">Bold (700)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label class="form-label fs-7 fw-semibold">Text Alignment</label>
+                    <div class="btn-group w-100" role="group">
+                      <input type="radio" class="btn-check" name="textAlign" id="alignLeft" value="start" checked>
+                      <label class="btn btn-outline-secondary btn-sm" for="alignLeft"><i class="bi bi-text-left"></i></label>
+
+                      <input type="radio" class="btn-check" name="textAlign" id="alignCenter" value="center">
+                      <label class="btn btn-outline-secondary btn-sm" for="alignCenter"><i class="bi bi-text-center"></i></label>
+
+                      <input type="radio" class="btn-check" name="textAlign" id="alignRight" value="end">
+                      <label class="btn btn-outline-secondary btn-sm" for="alignRight"><i class="bi bi-text-right"></i></label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. Borders & Shadows -->
+            <div class="accordion-item border-0 border-bottom">
+              <h2 class="accordion-header">
+                <button class="accordion-button collapsed fw-bold fs-6" type="button" data-bs-toggle="collapse" data-bs-target="#collapseBorders">
+                  <i class="bi bi-bounding-box text-warning me-2"></i> Borders & Elevation
+                </button>
+              </h2>
+              <div id="collapseBorders" class="accordion-collapse collapse" data-bs-parent="#controlsAccordion">
+                <div class="accordion-body d-flex flex-column gap-3">
+                  <div>
+                    <div class="d-flex justify-content-between">
+                      <label class="form-label fs-7 fw-semibold">Border Radius</label>
+                      <span id="borderRadiusVal" class="text-muted fs-7">8px</span>
+                    </div>
+                    <input type="range" class="form-range" id="borderRadiusInput" min="0" max="50" value="8">
+                  </div>
+
+                  <div>
+                    <div class="d-flex justify-content-between">
+                      <label class="form-label fs-7 fw-semibold">Border Width</label>
+                      <span id="borderWidthVal" class="text-muted fs-7">0px</span>
+                    </div>
+                    <input type="range" class="form-range" id="borderWidthInput" min="0" max="10" value="0">
+                  </div>
+
+                  <div>
+                    <label class="form-label fs-7 fw-semibold">Border Color</label>
+                    <div class="color-picker-wrapper">
+                      <input type="color" id="borderColorInput" value="#000000">
+                    </div>
+                  </div>
+
+                  <div>
+                    <label class="form-label fs-7 fw-semibold">Shadow Elevation</label>
+                    <select id="shadowInput" class="form-select form-select-sm">
+                      <option value="none">None (Flat)</option>
+                      <option value="sm">Small Shadow</option>
+                      <option value="md" selected>Medium Shadow</option>
+                      <option value="lg">Large Shadow</option>
+                      <option value="glow">Neon Glow</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 4. Spacing & Size -->
+            <div class="accordion-item border-0 border-bottom">
+              <h2 class="accordion-header">
+                <button class="accordion-button collapsed fw-bold fs-6" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSpacing">
+                  <i class="bi bi-aspect-ratio text-info me-2"></i> Spacing & Padding
+                </button>
+              </h2>
+              <div id="collapseSpacing" class="accordion-collapse collapse" data-bs-parent="#controlsAccordion">
+                <div class="accordion-body d-flex flex-column gap-3">
+                  <div>
+                    <div class="d-flex justify-content-between">
+                      <label class="form-label fs-7 fw-semibold">Vertical Padding</label>
+                      <span id="paddingYVal" class="text-muted fs-7">12px</span>
+                    </div>
+                    <input type="range" class="form-range" id="paddingYInput" min="4" max="32" value="12">
+                  </div>
+
+                  <div>
+                    <div class="d-flex justify-content-between">
+                      <label class="form-label fs-7 fw-semibold">Horizontal Padding</label>
+                      <span id="paddingXVal" class="text-muted fs-7">24px</span>
+                    </div>
+                    <input type="range" class="form-range" id="paddingXInput" min="8" max="64" value="24">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 5. Component Content Controls -->
+            <div class="accordion-item border-0">
+              <h2 class="accordion-header">
+                <button class="accordion-button collapsed fw-bold fs-6" type="button" data-bs-toggle="collapse" data-bs-target="#collapseContent">
+                  <i class="bi bi-pencil-square text-danger me-2"></i> Content & Context
+                </button>
+              </h2>
+              <div id="collapseContent" class="accordion-collapse collapse" data-bs-parent="#controlsAccordion">
+                <div class="accordion-body d-flex flex-column gap-3">
+                  <!-- Dynamic controls injected by JS depending on active component -->
+                  <div id="dynamicContentControls"></div>
+                </div>
+              </div>
+            </div>
+
+          </div><!-- End Accordion -->
+
+        </div>
+      </div>
+
+      <!-- RIGHT PANEL: Live Stage & Code Output -->
+      <div class="col-lg-8 col-xl-9 d-flex flex-column gap-4">
+        
+        <!-- Live Preview Stage Card -->
+        <div class="card border-0 shadow-sm rounded-3">
+          <div class="card-header bg-body border-0 py-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div class="d-flex align-items-center gap-2">
+              <i class="bi bi-display text-primary fs-5"></i>
+              <h5 class="mb-0 fw-bold">Live Canvas</h5>
+            </div>
+
+            <div class="d-flex align-items-center gap-2">
+              <span class="fs-7 text-muted me-1">Canvas Background:</span>
+              <div class="btn-group btn-group-sm" role="group">
+                <button id="canvasLightBtn" class="btn btn-outline-secondary active">
+                  <i class="bi bi-sun-fill me-1"></i> Light
+                </button>
+                <button id="canvasDarkBtn" class="btn btn-outline-secondary">
+                  <i class="bi bi-moon-stars-fill me-1"></i> Dark
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-body p-3 p-md-4">
+            <!-- Sandbox Canvas Window -->
+            <div id="sandboxStage" class="sandbox-stage canvas-light">
+              <!-- Rendered Component Injected Here -->
+              <div id="componentWrapper"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Code Inspector Card -->
+        <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+          <div class="card-header bg-body border-bottom py-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <ul class="nav nav-pills card-header-pills" id="codeTabs" role="tablist">
+              <li class="nav-item" role="presentation">
+                <button class="nav-link active fw-bold fs-7" id="html-tab" data-bs-toggle="tab" data-bs-target="#html-panel" type="button" role="tab">
+                  <i class="bi bi-filetype-html text-warning me-1 fs-6"></i> HTML + Bootstrap
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link fw-bold fs-7" id="css-tab" data-bs-toggle="tab" data-bs-target="#css-panel" type="button" role="tab">
+                  <i class="bi bi-filetype-css text-info me-1 fs-6"></i> Custom CSS Snippet
+                </button>
+              </li>
+            </ul>
+
+            <div class="d-flex align-items-center gap-2">
+              <button id="saveFavBtn" class="btn btn-sm btn-outline-danger d-flex align-items-center gap-1 rounded-pill px-3 fw-bold">
+                <i class="bi bi-heart"></i> Save Favorite
+              </button>
+              <button id="copyCodeBtn" class="btn btn-sm btn-primary d-flex align-items-center gap-1 rounded-pill px-3 fw-bold">
+                <i class="bi bi-clipboard"></i> Copy Code
+              </button>
+            </div>
+          </div>
+
+          <div class="card-body p-0">
+            <div class="tab-content" id="codeTabContent">
+              <!-- HTML Output -->
+              <div class="tab-pane fade show active" id="html-panel" role="tabpanel">
+                <pre class="m-0 p-3 code-block"><code id="htmlCodeOutput"></code></pre>
+              </div>
+              <!-- CSS Output -->
+              <div class="tab-pane fade" id="css-panel" role="tabpanel">
+                <pre class="m-0 p-3 code-block"><code id="cssCodeOutput"></code></pre>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- Favorites / Saved Snippets Modal -->
+  <div class="modal fade" id="favoritesModal" tabindex="-1" aria-labelledby="favoritesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable modal-lg">
+      <div class="modal-content border-0 shadow">
+        <div class="modal-header border-bottom">
+          <h5 class="modal-title fw-bold" id="favoritesModalLabel">
+            <i class="bi bi-bookmark-heart text-danger me-2"></i> Saved Customizations
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-4">
+          <div id="favoritesList" class="row g-3">
+            <!-- Dynamic Favorites List Cards Injected Here -->
+          </div>
+        </div>
+        <div class="modal-footer border-top justify-content-between">
+          <button type="button" id="clearAllFavsBtn" class="btn btn-outline-danger btn-sm">Clear All Saved</button>
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1100;">
+    <div id="liveToast" class="toast align-items-center text-bg-dark border-0 shadow" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="d-flex">
+        <div class="toast-body d-flex align-items-center gap-2">
+          <i id="toastIcon" class="bi bi-check-circle-fill text-success fs-5"></i>
+          <span id="toastMessage">Action completed successfully!</span>
+        </div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap 5 Bundle JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    /* DevPalette Core Logic */
+    document.addEventListener('DOMContentLoaded', () => {
+
+      // --- STATE STORE ---
+      const state = {
+        component: 'button',
+        bgColor: '#0d6efd',
+        textColor: '#ffffff',
+        isGradient: false,
+        bgSecondaryColor: '#6610f2',
+        fontSize: 16,
+        fontWeight: '600',
+        textAlign: 'start',
+        borderRadius: 8,
+        borderWidth: 0,
+        borderColor: '#000000',
+        shadow: 'md',
+        paddingY: 12,
+        paddingX: 24,
+        // Component-specific properties
+        content: {
+          buttonText: 'Click Me',
+          buttonIcon: 'bi-rocket-takeoff-fill',
+          cardTitle: 'Beautiful Card Title',
+          cardText: 'This is an example card component customized with DevPalette.',
+          cardImage: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&auto=format&fit=crop&q=80',
+          alertMessage: 'Attention! This is an interactive alert message banner.',
+          alertIcon: 'bi-exclamation-triangle-fill',
+          navbarBrand: 'DevPalette',
+          navbarLink1: 'Home',
+          navbarLink2: 'Features'
+        }
+      };
+
+      // --- DOM ELEMENTS ---
+      const componentSelect = document.getElementById('componentSelect');
+      const bgColorInput = document.getElementById('bgColorInput');
+      const textColorInput = document.getElementById('textColorInput');
+      const gradientToggle = document.getElementById('gradientToggle');
+      const bgSecondaryColorInput = document.getElementById('bgSecondaryColorInput');
+      const secondaryColorGroup = document.getElementById('secondaryColorGroup');
+      
+      const fontSizeInput = document.getElementById('fontSizeInput');
+      const fontSizeVal = document.getElementById('fontSizeVal');
+      const fontWeightInput = document.getElementById('fontWeightInput');
+      
+      const borderRadiusInput = document.getElementById('borderRadiusInput');
+      const borderRadiusVal = document.getElementById('borderRadiusVal');
+      const borderWidthInput = document.getElementById('borderWidthInput');
+      const borderWidthVal = document.getElementById('borderWidthVal');
+      const borderColorInput = document.getElementById('borderColorInput');
+      const shadowInput = document.getElementById('shadowInput');
+      
+      const paddingYInput = document.getElementById('paddingYInput');
+      const paddingYVal = document.getElementById('paddingYVal');
+      const paddingXInput = document.getElementById('paddingXInput');
+      const paddingXVal = document.getElementById('paddingXVal');
+
+      const dynamicContentControls = document.getElementById('dynamicContentControls');
+      const componentWrapper = document.getElementById('componentWrapper');
+      const htmlCodeOutput = document.getElementById('htmlCodeOutput');
+      const cssCodeOutput = document.getElementById('cssCodeOutput');
+
+      const sandboxStage = document.getElementById('sandboxStage');
+      const canvasLightBtn = document.getElementById('canvasLightBtn');
+      const canvasDarkBtn = document.getElementById('canvasDarkBtn');
+      
+      const themeToggleBtn = document.getElementById('themeToggleBtn');
+      const themeIcon = document.getElementById('themeIcon');
+      const copyCodeBtn = document.getElementById('copyCodeBtn');
+      const saveFavBtn = document.getElementById('saveFavBtn');
+      const favCountBadge = document.getElementById('favCountBadge');
+      const favoritesList = document.getElementById('favoritesList');
+      const clearAllFavsBtn = document.getElementById('clearAllFavsBtn');
+
+      const liveToast = document.getElementById('liveToast');
+      const toastMessage = document.getElementById('toastMessage');
+      const toastIcon = document.getElementById('toastIcon');
+      const bsToast = new bootstrap.Toast(liveToast);
+
+      // --- DYNAMIC CONTENT CONTROLS RENDERER ---
+      function renderDynamicContentControls() {
+        let html = '';
+        if (state.component === 'button') {
+          html = `
+            <div>
+              <label class="form-label fs-7 fw-semibold">Button Label</label>
+              <input type="text" id="ctrlButtonText" class="form-control form-control-sm" value="${state.content.buttonText}">
+            </div>
+            <div>
+              <label class="form-label fs-7 fw-semibold">Icon Class (Bootstrap Icons)</label>
+              <select id="ctrlButtonIcon" class="form-select form-select-sm">
+                <option value="none" ${state.content.buttonIcon === 'none' ? 'selected' : ''}>No Icon</option>
+                <option value="bi-rocket-takeoff-fill" ${state.content.buttonIcon === 'bi-rocket-takeoff-fill' ? 'selected' : ''}>Rocket</option>
+                <option value="bi-arrow-right-circle-fill" ${state.content.buttonIcon === 'bi-arrow-right-circle-fill' ? 'selected' : ''}>Arrow Right</option>
+                <option value="bi-check-lg" ${state.content.buttonIcon === 'bi-check-lg' ? 'selected' : ''}>Checkmark</option>
+                <option value="bi-heart-fill" ${state.content.buttonIcon === 'bi-heart-fill' ? 'selected' : ''}>Heart</option>
+              </select>
+            </div>
+          `;
+        } else if (state.component === 'card') {
+          html = `
+            <div>
+              <label class="form-label fs-7 fw-semibold">Card Title</label>
+              <input type="text" id="ctrlCardTitle" class="form-control form-control-sm" value="${state.content.cardTitle}">
+            </div>
+            <div>
+              <label class="form-label fs-7 fw-semibold">Card Description</label>
+              <textarea id="ctrlCardText" class="form-control form-control-sm" rows="2">${state.content.cardText}</textarea>
+            </div>
+            <div>
+              <label class="form-label fs-7 fw-semibold">Image URL</label>
+              <input type="text" id="ctrlCardImage" class="form-control form-control-sm" value="${state.content.cardImage}">
+            </div>
+          `;
+        } else if (state.component === 'alert') {
+          html = `
+            <div>
+              <label class="form-label fs-7 fw-semibold">Alert Message</label>
+              <input type="text" id="ctrlAlertMessage" class="form-control form-control-sm" value="${state.content.alertMessage}">
+            </div>
+            <div>
+              <label class="form-label fs-7 fw-semibold">Alert Icon</label>
+              <select id="ctrlAlertIcon" class="form-select form-select-sm">
+                <option value="bi-exclamation-triangle-fill" ${state.content.alertIcon === 'bi-exclamation-triangle-fill' ? 'selected' : ''}>Warning Triangle</option>
+                <option value="bi-info-circle-fill" ${state.content.alertIcon === 'bi-info-circle-fill' ? 'selected' : ''}>Info Circle</option>
+                <option value="bi-check-circle-fill" ${state.content.alertIcon === 'bi-check-circle-fill' ? 'selected' : ''}>Success Check</option>
+                <option value="bi-bell-fill" ${state.content.alertIcon === 'bi-bell-fill' ? 'selected' : ''}>Bell</option>
+              </select>
+            </div>
+          `;
+        } else if (state.component === 'navbar') {
+          html = `
+            <div>
+              <label class="form-label fs-7 fw-semibold">Brand Title</label>
+              <input type="text" id="ctrlNavbarBrand" class="form-control form-control-sm" value="${state.content.navbarBrand}">
+            </div>
+            <div>
+              <label class="form-label fs-7 fw-semibold">Link 1</label>
+              <input type="text" id="ctrlNavbarLink1" class="form-control form-control-sm" value="${state.content.navbarLink1}">
+            </div>
+            <div>
+              <label class="form-label fs-7 fw-semibold">Link 2</label>
+              <input type="text" id="ctrlNavbarLink2" class="form-control form-control-sm" value="${state.content.navbarLink2}">
+            </div>
+          `;
+        }
+        dynamicContentControls.innerHTML = html;
+        attachDynamicEventListeners();
+      }
+
+      function attachDynamicEventListeners() {
+        const ctrlButtonText = document.getElementById('ctrlButtonText');
+        const ctrlButtonIcon = document.getElementById('ctrlButtonIcon');
+        const ctrlCardTitle = document.getElementById('ctrlCardTitle');
+        const ctrlCardText = document.getElementById('ctrlCardText');
+        const ctrlCardImage = document.getElementById('ctrlCardImage');
+        const ctrlAlertMessage = document.getElementById('ctrlAlertMessage');
+        const ctrlAlertIcon = document.getElementById('ctrlAlertIcon');
+        const ctrlNavbarBrand = document.getElementById('ctrlNavbarBrand');
+        const ctrlNavbarLink1 = document.getElementById('ctrlNavbarLink1');
+        const ctrlNavbarLink2 = document.getElementById('ctrlNavbarLink2');
+
+        if (ctrlButtonText) ctrlButtonText.addEventListener('input', (e) => { state.content.buttonText = e.target.value; updatePreview(); });
+        if (ctrlButtonIcon) ctrlButtonIcon.addEventListener('change', (e) => { state.content.buttonIcon = e.target.value; updatePreview(); });
+        if (ctrlCardTitle) ctrlCardTitle.addEventListener('input', (e) => { state.content.cardTitle = e.target.value; updatePreview(); });
+        if (ctrlCardText) ctrlCardText.addEventListener('input', (e) => { state.content.cardText = e.target.value; updatePreview(); });
+        if (ctrlCardImage) ctrlCardImage.addEventListener('input', (e) => { state.content.cardImage = e.target.value; updatePreview(); });
+        if (ctrlAlertMessage) ctrlAlertMessage.addEventListener('input', (e) => { state.content.alertMessage = e.target.value; updatePreview(); });
+        if (ctrlAlertIcon) ctrlAlertIcon.addEventListener('change', (e) => { state.content.alertIcon = e.target.value; updatePreview(); });
+        if (ctrlNavbarBrand) ctrlNavbarBrand.addEventListener('input', (e) => { state.content.navbarBrand = e.target.value; updatePreview(); });
+        if (ctrlNavbarLink1) ctrlNavbarLink1.addEventListener('input', (e) => { state.content.navbarLink1 = e.target.value; updatePreview(); });
+        if (ctrlNavbarLink2) ctrlNavbarLink2.addEventListener('input', (e) => { state.content.navbarLink2 = e.target.value; updatePreview(); });
+      }
+
+      // --- CORE PREVIEW & CODE GENERATOR ---
+      function updatePreview() {
+        // Calculate dynamic shadow value
+        let shadowCss = 'none';
+        let shadowBsClass = '';
+        if (state.shadow === 'sm') { shadowCss = '0 .125rem .25rem rgba(0,0,0,.075)'; shadowBsClass = ' shadow-sm'; }
+        else if (state.shadow === 'md') { shadowCss = '0 .5rem 1rem rgba(0,0,0,.15)'; shadowBsClass = ' shadow'; }
+        else if (state.shadow === 'lg') { shadowCss = '0 1rem 3rem rgba(0,0,0,.175)'; shadowBsClass = ' shadow-lg'; }
+        else if (state.shadow === 'glow') { shadowCss = `0 0 20px ${state.bgColor}aa`; }
+
+        // Background styling
+        const bgStyle = state.isGradient 
+          ? `linear-gradient(135deg, ${state.bgColor}, ${state.bgSecondaryColor})` 
+          : state.bgColor;
+
+        // Custom CSS Rules construction
+        const customCssRules = `
+.custom-${state.component} {
+  background: ${bgStyle};
+  color: ${state.textColor};
+  font-size: ${state.fontSize}px;
+  font-weight: ${state.fontWeight};
+  border-radius: ${state.borderRadius}px;
+  border: ${state.borderWidth}px solid ${state.borderColor};
+  box-shadow: ${shadowCss};
+  padding: ${state.paddingY}px ${state.paddingX}px;
+  text-align: ${state.textAlign};
+  transition: all 0.25s ease-in-out;
+}`.trim();
+
+        let generatedHtml = '';
+
+        if (state.component === 'button') {
+          const iconHtml = (state.content.buttonIcon !== 'none') ? `<i class="bi ${state.content.buttonIcon} me-2"></i>` : '';
+          generatedHtml = `<button type="button" class="btn custom-button${shadowBsClass}">
+  ${iconHtml}${state.content.buttonText}
+</button>`;
+        } 
+        else if (state.component === 'card') {
+          generatedHtml = `<div class="card custom-card${shadowBsClass}" style="max-width: 360px; overflow: hidden;">
+  <img src="${state.content.cardImage}" class="card-img-top" alt="Card Header" style="max-height: 180px; object-fit: cover;">
+  <div class="card-body">
+    <h5 class="card-title fw-bold mb-2">${state.content.cardTitle}</h5>
+    <p class="card-text opacity-75">${state.content.cardText}</p>
+    <a href="#" class="btn btn-sm btn-light mt-2 fw-semibold">Learn More</a>
+  </div>
+</div>`;
+        } 
+        else if (state.component === 'alert') {
+          generatedHtml = `<div class="alert custom-alert${shadowBsClass} d-flex align-items-center mb-0" role="alert">
+  <i class="bi ${state.content.alertIcon} fs-4 me-3"></i>
+  <div>
+    ${state.content.alertMessage}
+  </div>
+</div>`;
+        } 
+        else if (state.component === 'navbar') {
+          generatedHtml = `<nav class="navbar navbar-expand custom-navbar${shadowBsClass} w-100">
+  <div class="container-fluid">
+    <a class="navbar-brand fw-bold" href="#" style="color: inherit;">${state.content.navbarBrand}</a>
+    <div class="navbar-nav ms-auto gap-3">
+      <a class="nav-link active fw-medium" href="#" style="color: inherit;">${state.content.navbarLink1}</a>
+      <a class="nav-link fw-medium" href="#" style="color: inherit; opacity: 0.8;">${state.content.navbarLink2}</a>
+    </div>
+  </div>
+</nav>`;
+        }
+
+        // Render component inside wrapper
+        componentWrapper.innerHTML = generatedHtml;
+
+        // Apply dynamic inline styles to rendered DOM node for pixel-perfect preview
+        const renderedElement = componentWrapper.firstElementChild;
+        if (renderedElement) {
+          renderedElement.style.background = bgStyle;
+          renderedElement.style.color = state.textColor;
+          renderedElement.style.fontSize = `${state.fontSize}px`;
+          renderedElement.style.fontWeight = state.fontWeight;
+          renderedElement.style.borderRadius = `${state.borderRadius}px`;
+          renderedElement.style.border = `${state.borderWidth}px solid ${state.borderColor}`;
+          renderedElement.style.boxShadow = shadowCss;
+          renderedElement.style.padding = `${state.paddingY}px ${state.paddingX}px`;
+          renderedElement.style.textAlign = state.textAlign;
+        }
+
+        // Populate Code Inspector Tabs
+        htmlCodeOutput.textContent = generatedHtml;
+        cssCodeOutput.textContent = customCssRules;
+      }
+
+      // --- CONTROL INPUT LISTENERS ---
+      componentSelect.addEventListener('change', (e) => {
+        state.component = e.target.value;
+        renderDynamicContentControls();
+        updatePreview();
+      });
+
+      bgColorInput.addEventListener('input', (e) => { state.bgColor = e.target.value; updatePreview(); });
+      textColorInput.addEventListener('input', (e) => { state.textColor = e.target.value; updatePreview(); });
+      
+      gradientToggle.addEventListener('change', (e) => {
+        state.isGradient = e.target.checked;
+        secondaryColorGroup.classList.toggle('d-none', !state.isGradient);
+        updatePreview();
+      });
+
+      bgSecondaryColorInput.addEventListener('input', (e) => { state.bgSecondaryColor = e.target.value; updatePreview(); });
+
+      fontSizeInput.addEventListener('input', (e) => {
+        state.fontSize = e.target.value;
+        fontSizeVal.textContent = `${state.fontSize}px`;
+        updatePreview();
+      });
+
+      fontWeightInput.addEventListener('change', (e) => { state.fontWeight = e.target.value; updatePreview(); });
+
+      document.querySelectorAll('input[name="textAlign"]').forEach(radio => {
+        radio.addEventListener('change', (e) => { state.textAlign = e.target.value; updatePreview(); });
+      });
+
+      borderRadiusInput.addEventListener('input', (e) => {
+        state.borderRadius = e.target.value;
+        borderRadiusVal.textContent = `${state.borderRadius}px`;
+        updatePreview();
+      });
+
+      borderWidthInput.addEventListener('input', (e) => {
+        state.borderWidth = e.target.value;
+        borderWidthVal.textContent = `${state.borderWidth}px`;
+        updatePreview();
+      });
+
+      borderColorInput.addEventListener('input', (e) => { state.borderColor = e.target.value; updatePreview(); });
+      shadowInput.addEventListener('change', (e) => { state.shadow = e.target.value; updatePreview(); });
+
+      paddingYInput.addEventListener('input', (e) => {
+        state.paddingY = e.target.value;
+        paddingYVal.textContent = `${state.paddingY}px`;
+        updatePreview();
+      });
+
+      paddingXInput.addEventListener('input', (e) => {
+        state.paddingX = e.target.value;
+        paddingXVal.textContent = `${state.paddingX}px`;
+        updatePreview();
+      });
+
+      // --- PRESET PALETTE APPLIER ---
+      window.applyPreset = function(bg, text, secondary = '', isGradient = false) {
+        state.bgColor = bg;
+        state.textColor = text;
+        state.isGradient = isGradient;
+        if (secondary) state.bgSecondaryColor = secondary;
+
+        // Sync Controls
+        bgColorInput.value = bg;
+        textColorInput.value = text;
+        gradientToggle.checked = isGradient;
+        if (secondary) bgSecondaryColorInput.value = secondary;
+        secondaryColorGroup.classList.toggle('d-none', !isGradient);
+
+        showToast('Applied color scheme preset!', 'bi-palette-fill', 'text-info');
+        updatePreview();
+      };
+
+      // --- CANVAS BACKGROUND TOGGLES ---
+      canvasLightBtn.addEventListener('click', () => {
+        canvasLightBtn.classList.add('active');
+        canvasDarkBtn.classList.remove('active');
+        sandboxStage.classList.remove('canvas-dark');
+        sandboxStage.classList.add('canvas-light');
+      });
+
+      canvasDarkBtn.addEventListener('click', () => {
+        canvasDarkBtn.classList.add('active');
+        canvasLightBtn.classList.remove('active');
+        sandboxStage.classList.remove('canvas-light');
+        sandboxStage.classList.add('canvas-dark');
+      });
+
+      // --- GLOBAL DARK/LIGHT MODE TOGGLE ---
+      themeToggleBtn.addEventListener('click', () => {
+        const currentTheme = document.documentElement.getAttribute('data-bs-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-bs-theme', newTheme);
+        themeIcon.className = newTheme === 'dark' ? 'bi bi-sun-fill text-warning' : 'bi bi-moon-stars-fill';
+      });
+
+      // --- COPY CODE & TOAST FEEDBACK ---
+      copyCodeBtn.addEventListener('click', () => {
+        const activeTab = document.querySelector('#codeTabs .nav-link.active').id;
+        const codeToCopy = activeTab === 'html-tab' ? htmlCodeOutput.textContent : cssCodeOutput.textContent;
+
+        if (codeToCopy) {
+          // Fallback / Standard clipboard copy
+          const textarea = document.createElement('textarea');
+          textarea.value = codeToCopy;
+          document.body.appendChild(textarea);
+          textarea.select();
+          document.execCommand('copy');
+          document.body.removeChild(textarea);
+
+          showToast('Code copied to clipboard!', 'bi-clipboard-check-fill', 'text-success');
+        }
+      });
+
+      function showToast(msg, iconClass, iconColorClass) {
+        toastMessage.textContent = msg;
+        toastIcon.className = `bi ${iconClass} ${iconColorClass} fs-5`;
+        bsToast.show();
+      }
+
+      // --- LOCALSTORAGE SAVED FAVORITES ---
+      function getFavorites() {
+        return JSON.parse(localStorage.getItem('devPaletteFavorites')) || [];
+      }
+
+      function saveFavorites(favs) {
+        localStorage.setItem('devPaletteFavorites', JSON.stringify(favs));
+        updateFavBadge();
+      }
+
+      function updateFavBadge() {
+        const favs = getFavorites();
+        favCountBadge.textContent = favs.length;
+      }
+
+      saveFavBtn.addEventListener('click', () => {
+        const favs = getFavorites();
+        const newFav = {
+          id: Date.now(),
+          name: `${state.component.toUpperCase()} (${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})})`,
+          state: JSON.parse(JSON.stringify(state))
+        };
+        favs.push(newFav);
+        saveFavorites(favs);
+        renderFavoritesModal();
+        showToast('Configuration saved to favorites!', 'bi-heart-fill', 'text-danger');
+      });
+
+      function renderFavoritesModal() {
+        const favs = getFavorites();
+        favoritesList.innerHTML = '';
+
+        if (favs.length === 0) {
+          favoritesList.innerHTML = `
+            <div class="col-12 text-center py-5 text-muted">
+              <i class="bi bi-bookmark-dash fs-1 d-block mb-2"></i>
+              <p class="mb-0">No saved snippets found. Customize a component and click "Save Favorite"!</p>
+            </div>`;
+          return;
+        }
+
+        favs.forEach((fav) => {
+          const col = document.createElement('div');
+          col.className = 'col-md-6';
+          col.innerHTML = `
+            <div class="card h-100 border shadow-sm rounded-3">
+              <div class="card-body p-3 d-flex flex-column justify-content-between gap-3">
+                <div class="d-flex align-items-center justify-content-between">
+                  <span class="badge bg-primary-subtle text-primary fw-bold text-uppercase">${fav.state.component}</span>
+                  <small class="text-muted fs-8">${fav.name}</small>
+                </div>
+                <div class="p-2 rounded border text-center" style="background:${fav.state.isGradient ? `linear-gradient(135deg, ${fav.state.bgColor}, ${fav.state.bgSecondaryColor})` : fav.state.bgColor}; color:${fav.state.textColor}; font-size:12px;">
+                  Sample Preview (${fav.state.component})
+                </div>
+                <div class="d-flex gap-2">
+                  <button class="btn btn-sm btn-outline-primary w-100 fw-bold" onclick="loadFavorite(${fav.id})">
+                    <i class="bi bi-box-arrow-in-down me-1"></i> Load
+                  </button>
+                  <button class="btn btn-sm btn-outline-danger" onclick="deleteFavorite(${fav.id})">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </div>
+              </div>
+            </div>`;
+          favoritesList.appendChild(col);
+        });
+      }
+
+      window.loadFavorite = function(id) {
+        const favs = getFavorites();
+        const fav = favs.find(f => f.id === id);
+        if (fav) {
+          Object.assign(state, fav.state);
+          
+          // Sync UI inputs with loaded state
+          componentSelect.value = state.component;
+          bgColorInput.value = state.bgColor;
+          textColorInput.value = state.textColor;
+          gradientToggle.checked = state.isGradient;
+          bgSecondaryColorInput.value = state.bgSecondaryColor;
+          secondaryColorGroup.classList.toggle('d-none', !state.isGradient);
+          
+          fontSizeInput.value = state.fontSize;
+          fontSizeVal.textContent = `${state.fontSize}px`;
+          fontWeightInput.value = state.fontWeight;
+          
+          borderRadiusInput.value = state.borderRadius;
+          borderRadiusVal.textContent = `${state.borderRadius}px`;
+          borderWidthInput.value = state.borderWidth;
+          borderWidthVal.textContent = `${state.borderWidth}px`;
+          borderColorInput.value = state.borderColor;
+          shadowInput.value = state.shadow;
+          
+          paddingYInput.value = state.paddingY;
+          paddingYVal.textContent = `${state.paddingY}px`;
+          paddingXInput.value = state.paddingX;
+          paddingXVal.textContent = `${state.paddingX}px`;
+
+          renderDynamicContentControls();
+          updatePreview();
+
+          const modalEl = document.getElementById('favoritesModal');
+          const modalInstance = bootstrap.Modal.getInstance(modalEl);
+          if (modalInstance) modalInstance.hide();
+
+          showToast('Loaded saved customization!', 'bi-box-arrow-in-down', 'text-primary');
+        }
+      };
+
+      window.deleteFavorite = function(id) {
+        let favs = getFavorites();
+        favs = favs.filter(f => f.id !== id);
+        saveFavorites(favs);
+        renderFavoritesModal();
+        showToast('Removed from favorites.', 'bi-trash', 'text-warning');
+      };
+
+      clearAllFavsBtn.addEventListener('click', () => {
+        saveFavorites([]);
+        renderFavoritesModal();
+        showToast('Cleared all saved snippets.', 'bi-trash-fill', 'text-danger');
+      });
+
+      // --- INITIALIZATION ---
+      renderDynamicContentControls();
+      updatePreview();
+      updateFavBadge();
+      renderFavoritesModal();
+
+    });
+  </script>
+</body>
+</html>
