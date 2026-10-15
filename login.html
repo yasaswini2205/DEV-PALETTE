@@ -1,0 +1,320 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DevPalette Login</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: linear-gradient(135deg, #eef2ff, #f8fafc, #ede9fe);
+}
+
+.login-container {
+    width: 100%;
+    max-width: 1000px;
+    min-height: 570px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    background: white;
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 25px 70px rgba(49, 87, 213, 0.15);
+}
+
+.left-panel {
+    padding: 55px 45px;
+    background: linear-gradient(145deg, #e0e7ff, #f5f3ff);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #3157d5;
+    font-size: 25px;
+    font-weight: 800;
+}
+
+.logo-icon {
+    width: 48px;
+    height: 48px;
+    background: #3157d5;
+    color: white;
+    display: grid;
+    place-items: center;
+    border-radius: 14px;
+    font-size: 25px;
+}
+
+.left-panel h1 {
+    font-size: 39px;
+    line-height: 1.2;
+    color: #172554;
+    margin: 38px 0 18px;
+}
+
+.left-panel h1 span {
+    color: #5b4be8;
+}
+
+.left-panel p {
+    color: #64748b;
+    line-height: 1.8;
+    font-size: 15px;
+}
+
+.features {
+    display: grid;
+    gap: 20px;
+    margin-top: 32px;
+}
+
+.feature {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    color: #334155;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.feature i {
+    width: 38px;
+    height: 38px;
+    display: grid;
+    place-items: center;
+    border-radius: 11px;
+    background: white;
+    color: #5145cd;
+    font-size: 19px;
+}
+
+.right-panel {
+    padding: 55px 45px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.right-panel h2 {
+    color: #172554;
+    font-size: 30px;
+    margin-bottom: 10px;
+}
+
+.subtitle {
+    color: #64748b;
+    font-size: 14px;
+    margin-bottom: 32px;
+    line-height: 1.6;
+}
+
+label {
+    display: block;
+    color: #334155;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 9px;
+}
+
+.input-box {
+    position: relative;
+    margin-bottom: 22px;
+}
+
+.input-box i {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+}
+
+input {
+    width: 100%;
+    padding: 15px 15px 15px 45px;
+    border: 1px solid #dbe2ee;
+    border-radius: 12px;
+    outline: none;
+    font-family: inherit;
+    font-size: 14px;
+    transition: 0.2s;
+}
+
+input:focus {
+    border-color: #635bdf;
+    box-shadow: 0 0 0 4px #635bdf18;
+}
+
+.signin-btn {
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(100deg, #3157d5, #7057e8);
+    color: white;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.2s;
+    box-shadow: 0 8px 18px #4f46e533;
+}
+
+.signin-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 22px #4f46e544;
+}
+
+.footer {
+    text-align: center;
+    color: #94a3b8;
+    font-size: 12px;
+    margin-top: 28px;
+}
+
+@media (max-width: 750px) {
+    .login-container {
+        grid-template-columns: 1fr;
+    }
+
+    .left-panel {
+        padding: 30px;
+    }
+
+    .left-panel h1 {
+        font-size: 30px;
+        margin: 25px 0 12px;
+    }
+
+    .features {
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+
+    .right-panel {
+        padding: 35px 30px;
+    }
+}
+</style>
+</head>
+<body>
+<div class="login-container">
+
+    <div class="left-panel">
+
+        <div class="logo">
+            <div class="logo-icon">
+                <i class="bi bi-palette2"></i>
+            </div>
+            DevPalette
+        </div>
+
+        <h1>Design better.<br>
+            <span>Create faster.</span>
+        </h1>
+
+        <p>
+            Customize UI components, experiment with styles,
+            and generate HTML and CSS code instantly with DevPalette.
+        </p>
+
+        <div class="features">
+            <div class="feature">
+                <i class="bi bi-sliders"></i>
+                <span>Live customization</span>
+            </div>
+
+            <div class="feature">
+                <i class="bi bi-code-slash"></i>
+                <span>Instant code output</span>
+            </div>
+
+            <div class="feature">
+                <i class="bi bi-bookmark-heart"></i>
+                <span>Save favorite designs</span>
+            </div>
+
+            <div class="feature">
+                <i class="bi bi-moon-stars"></i>
+                <span>Light & dark themes</span>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="right-panel">
+
+        <h2>Welcome back!</h2>
+
+        <p class="subtitle">
+            Sign in to continue to your design workspace.
+        </p>
+
+        <form id="loginForm">
+
+            <label for="email">Email address</label>
+
+            <div class="input-box">
+                <i class="bi bi-envelope"></i>
+                <input
+                    type="email"
+                    id="email"
+                    placeholder="you@example.com"
+                    required>
+            </div>
+
+            <label for="password">Password</label>
+
+            <div class="input-box">
+                <i class="bi bi-lock"></i>
+                <input
+                    type="password"
+                    id="password"
+                    placeholder="Enter your password"
+                    required>
+            </div>
+
+            <button type="submit" class="signin-btn">
+                Sign In to DevPalette
+                <i class="bi bi-arrow-right"></i>
+            </button>
+
+        </form>
+
+        <div class="footer">
+            Made for creators who love clean interfaces.
+        </div>
+
+    </div>
+
+</div>
+<script>
+document.getElementById("loginForm").addEventListener("submit", function(event) {
+    event.preventDefault();
+
+    // Open the main DevPalette website
+    window.location.href = "index.html";
+});
+</script>
+</body>
+</html>
